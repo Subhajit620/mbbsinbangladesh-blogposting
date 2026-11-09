@@ -1,0 +1,25 @@
+# One-service deploy: Express serves the API *and* the built React app.
+# Create a "Blueprint" on https://render.com pointing at this repo, then set
+# the environment variables marked sync: false in the dashboard.
+services:
+  - type: web
+    name: mbbs-bangladesh
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm install --prefix backend && npm run build
+    startCommand: node backend/index.js
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: MONGODB_URI
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
