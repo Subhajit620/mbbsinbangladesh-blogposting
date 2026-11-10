@@ -49,7 +49,10 @@ function upsertCanonicalLink(href: string) {
   link.setAttribute('href', href);
 }
 
-function upsertJsonLdScript(id: string, data: Record<string, any> | null) {
+function upsertJsonLdScript(
+  id: string,
+  data: Record<string, any> | Record<string, any>[] | null
+) {
   let script = document.getElementById(id) as HTMLScriptElement | null;
   if (!data) {
     if (script) script.remove();
@@ -405,8 +408,11 @@ export default function BlogDetailPage() {
 
     const origin = window.location.origin;
     const pageUrl = `${origin}/blogs/${blog.slug}`;
+    const rawCanonical = blog.canonicalUrl ? blog.canonicalUrl.trim() : '';
     const canonicalUrl =
-      blog.canonicalUrl && blog.canonicalUrl.trim() ? blog.canonicalUrl.trim() : pageUrl;
+      rawCanonical && !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(rawCanonical)
+        ? rawCanonical
+        : pageUrl;
     const seoTitle = blog.seoTitle && blog.seoTitle.trim() ? blog.seoTitle.trim() : blog.title;
     const seoDescription =
       blog.seoDescription && blog.seoDescription.trim() ? blog.seoDescription.trim() : blog.excerpt;
@@ -419,8 +425,20 @@ export default function BlogDetailPage() {
 
     upsertMetaTag('name', 'description', seoDescription);
     upsertMetaTag('name', 'robots', robotsValue);
-    if (blog.focusKeyword) {
-      upsertMetaTag('name', 'keywords', [blog.focusKeyword, ...(blog.tags || [])].join(', '));
+    if (blog.author) {
+      upsertMetaTag('name', 'author', blog.author);
+    }
+    const keywordsList = Array.from(
+      new Set(
+        [
+          ...(blog.focusKeyword ? [blog.focusKeyword] : []),
+          ...(blog.tag ? [blog.tag] : []),
+          ...(Array.isArray(blog.tags) ? blog.tags : []),
+        ].filter(Boolean)
+      )
+    );
+    if (keywordsList.length > 0) {
+      upsertMetaTag('name', 'keywords', keywordsList.join(', '));
     }
     upsertCanonicalLink(canonicalUrl);
 
@@ -452,12 +470,25 @@ export default function BlogDetailPage() {
     upsertMetaTag('name', 'twitter:image', ogImageUrl);
     upsertMetaTag('name', 'twitter:image:alt', imageAlt);
 
-    const jsonLd: Record<string, any> = {
+    const wordCount = String(blog.content || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+
+    const blogPostingSchema: Record<string, any> = {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
       headline: seoTitle,
       description: seoDescription,
-      image: [ogImageUrl],
+      inLanguage: 'en-IN',
+      wordCount,
+      image: [
+        {
+          '@type': 'ImageObject',
+          url: ogImageUrl,
+          caption: imageAlt,
+        },
+      ],
       author: {
         '@type': 'Person',
         name: blog.author,
@@ -476,19 +507,39 @@ export default function BlogDetailPage() {
       },
     };
 
-    if (publishedIso) jsonLd.datePublished = publishedIso;
-    if (modifiedIso) jsonLd.dateModified = modifiedIso;
-    if (blog.tag) jsonLd.articleSection = blog.tag;
-
-    const keywordsList = [
-      ...(blog.focusKeyword ? [blog.focusKeyword] : []),
-      ...(Array.isArray(blog.tags) ? blog.tags : []),
-    ].filter(Boolean);
+    if (publishedIso) blogPostingSchema.datePublished = publishedIso;
+    if (modifiedIso) blogPostingSchema.dateModified = modifiedIso;
+    if (blog.tag) blogPostingSchema.articleSection = blog.tag;
     if (keywordsList.length > 0) {
-      jsonLd.keywords = Array.from(new Set(keywordsList)).join(', ');
+      blogPostingSchema.keywords = keywordsList.join(', ');
     }
 
-    upsertJsonLdScript('blog-jsonld', jsonLd);
+    const breadcrumbSchema: Record<string, any> = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: `${origin}/`,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Blogs',
+          item: `${origin}/blogs`,
+        },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: blog.title,
+          item: canonicalUrl,
+        },
+      ],
+    };
+
+    upsertJsonLdScript('blog-jsonld', [blogPostingSchema, breadcrumbSchema]);
 
     return () => {
       upsertJsonLdScript('blog-jsonld', null);

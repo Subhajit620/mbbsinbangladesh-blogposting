@@ -117,11 +117,17 @@ function blogFullstackDevPlugin() {
 
             const rawHtml = fs.readFileSync(path.resolve(process.cwd(), 'index.html'), 'utf-8')
             const transformedHtml = await server.transformIndexHtml(req.url, rawHtml)
-            const finalHtml = seoResult.headTags
+            let finalHtml = seoResult.headTags
               ? transformedHtml
                   .replace(/<title>[\s\S]*?<\/title>/i, '')
                   .replace('</head>', `    ${seoResult.headTags}\n  </head>`)
               : transformedHtml
+            if (seoResult.bodyFallbackHtml) {
+              finalHtml = finalHtml.replace(
+                '</body>',
+                `    ${seoResult.bodyFallbackHtml}\n  </body>`
+              )
+            }
 
             res.statusCode = seoResult.statusCode || 200
             res.setHeader('Content-Type', 'text/html; charset=utf-8')

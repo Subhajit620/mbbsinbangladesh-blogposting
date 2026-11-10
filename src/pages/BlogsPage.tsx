@@ -72,6 +72,22 @@ export default function BlogsPage() {
       'content',
       'Read practical guides, NMC Foreign Medical Graduate regulations, FMGE preparation notes, and student life stories from medical colleges in Bangladesh.'
     );
+
+    let metaRobots = document.head.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+    if (!metaRobots) {
+      metaRobots = document.createElement('meta');
+      metaRobots.setAttribute('name', 'robots');
+      document.head.appendChild(metaRobots);
+    }
+    metaRobots.setAttribute('content', 'index, follow');
+
+    let canonical = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', `${window.location.origin}/blogs`);
   }, []);
 
   useEffect(() => {

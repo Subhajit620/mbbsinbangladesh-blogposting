@@ -21,6 +21,7 @@ const {
 } = require('./utils/seoAndSitemap');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // CORS: allow all by default, or restrict to a comma-separated CORS_ORIGIN list
 const allowedOrigins = (process.env.CORS_ORIGIN || '')
@@ -126,7 +127,9 @@ app.get('/blogs/:slug', async (req, res, next) => {
 
     if (fs.existsSync(htmlPath)) {
       const rawHtml = fs.readFileSync(htmlPath, 'utf-8');
-      const finalHtml = result.headTags ? injectSeoIntoHtml(rawHtml, result.headTags) : rawHtml;
+      const finalHtml = result.headTags
+        ? injectSeoIntoHtml(rawHtml, result.headTags, result.bodyFallbackHtml)
+        : rawHtml;
       res.status(result.statusCode || 200).header('Content-Type', 'text/html; charset=utf-8').send(finalHtml);
       return;
     }

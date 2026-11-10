@@ -55,7 +55,9 @@ export default function App() {
           {/* Main App Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/application" element={<ApplicationPage />} />
           <Route path="/application/:collegeId" element={<ApplicationPage />} />
+          <Route path="/apply" element={<ApplyWizard />} />
           <Route path="/apply/:collegeId" element={<ApplyWizard />} />
           <Route path="/colleges" element={<AllCollegesPage />} />
           <Route path="/services" element={<ServicesPage />} />

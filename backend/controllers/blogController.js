@@ -583,6 +583,12 @@ exports.createBlog = async (req, res) => {
     });
 
     await blog.save();
+    setImmediate(() => {
+      try {
+        const { generateSitemapXml } = require('../utils/seoAndSitemap');
+        generateSitemapXml(req).catch(() => {});
+      } catch {}
+    });
     return res.status(201).json(blog);
   } catch (err) {
     console.error('Error creating blog:', err);
@@ -721,6 +727,12 @@ exports.updateBlog = async (req, res) => {
     }
 
     await blog.save();
+    setImmediate(() => {
+      try {
+        const { generateSitemapXml } = require('../utils/seoAndSitemap');
+        generateSitemapXml(req).catch(() => {});
+      } catch {}
+    });
     return res.json(blog);
   } catch (err) {
     console.error('Error updating blog:', err);
@@ -758,6 +770,12 @@ exports.deleteBlog = async (req, res) => {
       );
     }
 
+    setImmediate(() => {
+      try {
+        const { generateSitemapXml } = require('../utils/seoAndSitemap');
+        generateSitemapXml(req).catch(() => {});
+      } catch {}
+    });
     return res.json({ message: 'Blog post deleted successfully', deletedSlug: blog.slug });
   } catch (err) {
     console.error('Error deleting blog:', err);
